@@ -22,9 +22,12 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+
+import static com.example.fedor.newsapp.R.id.date;
 
 /**
  * An {@link NewsAdapter} knows how to create a list item layout for each news story
@@ -60,9 +63,8 @@ public class NewsAdapter extends ArrayAdapter<News> {
     public View getView(int position, View convertView, ViewGroup parent) {
         // Check if there is an existing list item view (called convertView) that we can reuse,
         // otherwise, if convertView is null, then inflate a new list item layout.
-        View listItemView = convertView;
-        if (listItemView == null) {
-            listItemView = LayoutInflater.from(getContext()).inflate(
+        if (convertView == null) {
+            convertView = LayoutInflater.from(getContext()).inflate(
                     R.layout.news_list_item, parent, false);
         }
 
@@ -70,44 +72,50 @@ public class NewsAdapter extends ArrayAdapter<News> {
         News currentNews = getItem(position);
 
         // Find the TextView with view ID title
-        TextView titleView = (TextView) listItemView.findViewById(R.id.title);
+        TextView titleView = (TextView) convertView.findViewById(R.id.title);
         // Display the title of the current news story in that TextView
         titleView.setText(currentNews.getTitle());
 
         // Find the TextView with view ID category
-        TextView categoryView = (TextView) listItemView.findViewById(R.id.category);
+        TextView categoryView = (TextView) convertView.findViewById(R.id.category);
         // Display the location of the current news story in that TextView
         categoryView.setText(currentNews.getSection());
 
         // Find the TextView with view ID author
-        TextView authorView = (TextView) listItemView.findViewById(R.id.author);
+        TextView authorView = (TextView) convertView.findViewById(R.id.author);
         // Display the author of the current news story in that TextView
         authorView.setText(currentNews.getAuthor());
 
         // Get the web publication string from the news story object.
         String webPublicationDate = currentNews.getWebPublicationDate();
 
-        // Split the string into different parts (as an array of Strings)
-        // based on the "T" character. We expect an array of 2 Strings, where
-        // the first String will be the date and the second String will be the exact time.
-        String[] parts = webPublicationDate.split(TIME_SEPARATOR);
-        // Date
-        String date = parts[0];
-        // Exact time
-        String time = parts[1];
+        // Create new String object from the ISO 8601 date and time info of the news story
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String dateInString = webPublicationDate;
 
-        // Find the TextView with view ID date
-        TextView dateView = (TextView) listItemView.findViewById(R.id.date);
-        // Display the date of the current news story in that TextView
-        dateView.setText(date);
+        try {
+            // Create a new Date object from the ISO 8601 date and time info of the news story
+            Date dateObject = formatter.parse(dateInString.replaceAll("Z$", "+0000"));
+            // Find the TextView with view ID date
+            TextView dateView = (TextView) convertView.findViewById(date);
+            // Format the date string (i.e. "Mar 3, 1984")
+            String formattedDate = formatDate(dateObject);
+            // Display the date of the current earthquake in that TextView
+            dateView.setText(formattedDate);
 
-        // Find the TextView with view ID time
-        TextView timeView = (TextView) listItemView.findViewById(R.id.time);
-        // Display the time of the current news story in that TextView
-        timeView.setText(time);
+            // Find the TextView with view ID time
+            TextView timeView = (TextView) convertView.findViewById(R.id.time);
+            // Format the time string (i.e. "4:30PM")
+            String formattedTime = formatTime(dateObject);
+            // Display the time of the current earthquake in that TextView
+            timeView.setText(formattedTime);
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
         // Return the list item view that is now showing the appropriate data
-        return listItemView;
+        return convertView;
     }
 
     /**
@@ -125,4 +133,5 @@ public class NewsAdapter extends ArrayAdapter<News> {
         SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a");
         return timeFormat.format(dateObject);
     }
+
 }
